@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def run(*args: str) -> str:
     command = [shutil.which(args[0]) or args[0], *args[1:]]
-    return subprocess.check_output(command, cwd=ROOT, text=True).strip()
+    # gh emits UTF-8 even when Windows' default Python encoding is GBK.
+    return subprocess.check_output(command, cwd=ROOT, text=True, encoding='utf-8').strip()
 
 
 def main() -> None:
