@@ -31,7 +31,7 @@ npm test -- --workers=2
 ```
 
 `bootstrap-windows.ps1` restores WinDivert binaries from the official release
-with SHA-256 verification and extracts the WebView2 loader from the checked-in
+with SHA-256 verification and extracts WebView2 headers and loaders from the checked-in
 NuGet archive. It does not replace tracked SDK source files. Run CMake before
 building the frontend because it generates `frontend/src/version.ts`.
 
@@ -63,6 +63,35 @@ monitors with different scaling; change Windows scaling while running; then chec
 text, icons, resize edges, maximize/restore, tray restore and restart geometry.
 Browser device-scale tests and a synthetic WM_DPICHANGED test do not replace this
 physical multi-monitor check.
+
+## Windows installer releases
+
+CI restores the ignored WebView2 `build/native` headers as well as loader binaries;
+missing SDK components fail during CMake configuration. Every PR builds an Inno
+Setup EXE and tests install, upgrade and uninstall in a Chinese path on a disposable
+runner, including preservation of user configuration. These tests never start the
+proxy engine. Preview installers use version `0.0.0`.
+
+To package locally after building, set `VCPKG_ROOT` and run
+`./scripts/package-windows.ps1 -Version 0.10.1`. The script downloads a SHA-256-pinned
+Inno Setup 6.4.3 compiler and verifies Microsoft's signatures on runtime installers.
+Output is `build/installer/clew-0.10.1-windows-x64-setup.exe`. Installer translation
+comes from Inno Setup's `is-6_4_3/Files/Languages/Unofficial/ChineseSimplified.isl`;
+its original translator credits are retained.
+
+After reviewing the branch and checking CI, run `python scripts/release.py v0.10.1`
+(`--dry-run` previews repository, commit and tag). This pushes to **origin**, without
+hard-coding the upstream repository. A `vMAJOR.MINOR.PATCH` tag triggers the full
+Windows pipeline; only after all tests pass does the separate release job upload
+the EXE to that repository. No application ZIP is published. GitHub's automatic
+source-code archives are not application packages. Application and installer
+executables are currently unsigned.
+
+The installer requires x64 Windows 10 2004+ and admin rights. It includes the C++
+redistributable and the WebView2 bootstrapper (Internet required if WebView2 is
+missing), dependency licenses, shortcuts, and an uninstaller. Exit Clew before
+upgrading/uninstalling. User data is retained; an autostart task is removed only if
+its executable belongs to this installation.
 
 DPI implementation references: [Microsoft WM_DPICHANGED](https://learn.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged)
 and [WebView2 controller scaling](https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller3).

@@ -12,16 +12,21 @@ if (-not (Test-Path (Join-Path $root 'WinDivert-2.2.2-A/x64/WinDivert.lib'))) {
     Expand-Archive -LiteralPath $zip -DestinationPath $cache -Force
     Copy-Item -LiteralPath (Join-Path $cache 'WinDivert-2.2.2-A/x64') -Destination (Join-Path $root 'WinDivert-2.2.2-A/x64') -Recurse -Force
 }
-# The repository's NuGet archive includes ignored loader binaries. Extract only
-# those binaries so tracked SDK headers and notices are never overwritten.
+# Git ignores every build/ directory, including the SDK headers. Restore both
+# headers and loaders from the checked-in NuGet archive on fresh checkouts.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::OpenRead((Join-Path $root 'src/ui/third_party/webview2.nupkg'))
 try {
     foreach ($entry in $archive.Entries) {
-        if ($entry.FullName -match '^build/native/(x64|x86|arm64)/WebView2Loader(Static\.lib|\.dll|\.dll\.lib)$') {
+        if ($entry.FullName -match '^build/native/(include/[^/]+\.h|(x64|x86|arm64)/WebView2Loader(Static\.lib|\.dll|\.dll\.lib))$') {
             $dest = Join-Path $root ('src/ui/third_party/WebView2/' + $entry.FullName)
             New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
             [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $dest, $true)
         }
     }
 } finally { $archive.Dispose() }
+foreach ($required in @('include/WebView2.h', 'x64/WebView2LoaderStatic.lib')) {
+    if (-not (Test-Path (Join-Path $root "src/ui/third_party/WebView2/build/native/$required"))) {
+        throw "WebView2 SDK extraction incomplete: $required"
+    }
+}

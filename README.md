@@ -4,7 +4,7 @@
 
 **Languages**: [简体中文](README.md) · [English](README.en.md)
 
-[![Release](https://img.shields.io/github/v/release/ymonster/clew-proxy)](https://github.com/ymonster/clew-proxy/releases)
+[![Release](https://img.shields.io/github/v/release/LeoooChen/clew-proxy)](https://github.com/LeoooChen/clew-proxy/releases)
 [![License](https://img.shields.io/github/license/ymonster/clew-proxy)](LICENSE)
 
 ![Main UI](docs/images/main_ui.png)
@@ -60,7 +60,9 @@
 
 ### 下载
 
-[Releases 页](https://github.com/ymonster/clew-proxy/releases) 下载最新 zip，解压，双击 `clew.exe`，会自动弹 UAC 提权。
+从此 fork 的 [Releases 页](https://github.com/LeoooChen/clew-proxy/releases) 下载 `clew-版本-windows-x64-setup.exe`，运行安装向导，然后从开始菜单启动 Clew。安装程序支持简体中文和英文，会按需安装 C++ 和 WebView2 运行库（缺少 WebView2 时需要联网）。安装和运行会弹出 UAC 提权提示。
+
+发布附件仅提供 EXE 安装程序。升级和卸载保留安装目录中的 `clew.json` 等用户数据；从旧便携版迁移时，先退出 Clew，再将原 `clew.json` 复制到新的安装目录。
 
 ## 使用
 

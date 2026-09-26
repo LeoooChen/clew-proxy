@@ -4,7 +4,7 @@
 
 **Languages**: [简体中文](README.md) · [English](README.en.md)
 
-[![Release](https://img.shields.io/github/v/release/ymonster/clew-proxy)](https://github.com/ymonster/clew-proxy/releases)
+[![Release](https://img.shields.io/github/v/release/LeoooChen/clew-proxy)](https://github.com/LeoooChen/clew-proxy/releases)
 [![License](https://img.shields.io/github/license/ymonster/clew-proxy)](LICENSE)
 
 ![Main UI](docs/images/main_ui.png)
@@ -59,7 +59,9 @@ The reason I built it: long ago while using Antigravity I hit a wall — with my
 
 ### Download
 
-Grab the latest zip from the [Releases page](https://github.com/ymonster/clew-proxy/releases), extract, double-click `clew.exe` — it will auto-trigger UAC.
+Download `clew-VERSION-windows-x64-setup.exe` from this fork's [Releases page](https://github.com/LeoooChen/clew-proxy/releases), run the installer, then launch Clew from the Start menu. Setup supports English and Simplified Chinese and installs missing C++ and WebView2 runtimes (Internet access is needed when WebView2 is missing). Setup and Clew request administrator privileges.
+
+Release assets contain the EXE installer only. Upgrades and uninstall preserve `clew.json` and other user data in the installation directory. To migrate from a portable copy, exit Clew and copy its `clew.json` into the new installation directory.
 
 ## Usage
 
