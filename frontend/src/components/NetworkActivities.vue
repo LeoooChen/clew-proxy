@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { t, locale } from '@/i18n'
 import { ref, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
+import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale'
 import { AgGridVue } from 'ag-grid-vue3'
 import {
   AllCommunityModule,
@@ -23,6 +25,8 @@ const props = defineProps<{
 }>()
 
 const { isDark } = useTheme()
+
+const gridLocale = computed(() => locale.value === 'zh-CN' ? AG_GRID_LOCALE_CN : undefined)
 
 const rowData = ref<NetworkConnection[]>([])
 const filterText = ref('')
@@ -57,8 +61,8 @@ const gridTheme = computed(() =>
 const hasData = computed(() => rowData.value.length > 0)
 
 const selectedProcessName = computed(() => {
-  if (rowData.value.length > 0) return rowData.value[0]?.process_name ?? 'this process'
-  return 'this process'
+  if (rowData.value.length > 0) return rowData.value[0]?.process_name ?? t('this process')
+  return t('this process')
 })
 
 const columnDefs = computed<ColDef<NetworkConnection>[]>(() => {
@@ -81,7 +85,7 @@ const columnDefs = computed<ColDef<NetworkConnection>[]>(() => {
 
   if (allProcsView) {
     cols.push(
-      { headerName: 'Process', field: 'process_name', minWidth: 150, flex: 1 },
+      { headerName: t('Process'), field: 'process_name', minWidth: 150, flex: 1 },
       pidCol,
     )
   } else {
@@ -90,7 +94,7 @@ const columnDefs = computed<ColDef<NetworkConnection>[]>(() => {
 
   cols.push(
     {
-      headerName: 'Proto',
+      headerName: t('Proto'),
       field: 'protocol',
       width: 72,
       cellRenderer: (params: { value: string }) => {
@@ -102,7 +106,7 @@ const columnDefs = computed<ColDef<NetworkConnection>[]>(() => {
       },
     },
     {
-      headerName: 'Remote',
+      headerName: t('Remote'),
       valueGetter: (params) => {
         if (!params.data) return ''
         if (!params.data.remote_ip) return ''
@@ -112,35 +116,35 @@ const columnDefs = computed<ColDef<NetworkConnection>[]>(() => {
       cellClass: 'font-mono',
     },
     {
-      headerName: 'State',
+      headerName: t('State'),
       field: 'state',
       width: 140,
       cellRenderer: (params: { value: string }) => {
         const value = params.value
         if (!value) return ''
         const dotColor = stateDotColor(value)
-        return `<span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${dotColor};"></span>${value}</span>`
+        return `<span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${dotColor};"></span>${t(value)}</span>`
       },
     },
     {
-      headerName: 'Proxy',
+      headerName: t('Proxy'),
       field: 'proxy_status',
       width: 100,
       cellRenderer: (params: { value: string }) => {
         const value = params.value
         if (value === 'PROXIED') {
-          return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;">PROXIED</span>`
+          return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;">${t('PROXIED')}</span>`
         }
         if (value === 'IGNORED') {
-          return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(234,179,8,0.15);color:#eab308;">IGNORED</span>`
+          return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(234,179,8,0.15);color:#eab308;">${t('IGNORED')}</span>`
         }
-        return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(161,161,170,0.15);color:#a1a1aa;">DIRECT</span>`
+        return `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(161,161,170,0.15);color:#a1a1aa;">${t('DIRECT')}</span>`
       },
     },
     {
       // The header "Local Port" is the widest thing in this column (the value
       // is at most 5 digits), so the width is sized to fit the label.
-      headerName: 'Local Port',
+      headerName: t('Local Port'),
       field: 'local_port',
       width: 118,
       cellClass: 'font-mono',
@@ -224,7 +228,7 @@ onUnmounted(() => {
         <Search class="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
         <Input
           v-model="filterText"
-          placeholder="Filter target address or state..."
+          :placeholder="t('Filter target address or state...')"
           class="h-8 pl-7 text-xs"
         />
       </div>
@@ -233,6 +237,9 @@ onUnmounted(() => {
     <!-- AG Grid or Empty State -->
     <template v-if="hasData">
       <AgGridVue
+        :key="locale"
+        :localeText="gridLocale"
+        :quickFilterText="filterText"
         style="flex: 1 1 0; min-height: 0; width: 100%;"
         :theme="gridTheme"
         :rowData="rowData"
@@ -251,12 +258,9 @@ onUnmounted(() => {
       <div class="flex-1 flex flex-col items-center justify-center text-center px-8">
         <Moon class="size-12 text-muted-foreground/30 mb-4" />
         <p class="text-sm text-muted-foreground">
-          We haven't detected any recent network activity
-          <template v-if="selectedPid != null"> from {{ selectedProcessName }}</template>.
+          {{ selectedPid != null ? t('No recent network activity from {name}.', { name: selectedProcessName }) : t('No recent network activity.') }}
         </p>
-        <p class="text-xs text-muted-foreground/70 mt-2 max-w-sm">
-          Connections will appear here once the process starts making network requests. Make sure the proxy engine is running.
-        </p>
+        <p class="text-xs text-muted-foreground/70 mt-2 max-w-sm"> {{ t('Connections will appear here once the process starts making network requests. Make sure the proxy engine is running.') }} </p>
       </div>
     </template>
   </div>

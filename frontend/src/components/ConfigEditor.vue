@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t, language, validLanguage, setLanguage } from '@/i18n'
 import { ref, watch, onMounted, onUnmounted, computed, useId } from 'vue'
 // JSON-only Monaco build: import the core API + JSON language contribution only,
 // so Vite can tree-shake away the 80+ unused languages.
@@ -31,6 +32,31 @@ import { useTheme } from '@/composables/useTheme'
 import { CLEW_VERSION } from '@/version'
 
 const { isDark } = useTheme()
+const languageId = useId()
+const languageSaving = ref(false)
+const languageError = ref('')
+async function changeLanguage(event: Event) {
+  const select = event.target as HTMLSelectElement
+  const next = validLanguage(select.value)
+  select.value = language.value
+  if (next === language.value) return
+  if (hasUnsavedChanges.value && !confirm(t('You have unsaved changes. Discard?'))) return
+  languageSaving.value = true
+  languageError.value = ''
+  try {
+    const config = await getConfig() as Record<string, unknown>
+    config.ui = { ...(config.ui as Record<string, unknown> ?? {}), language: next }
+    await updateConfig(config)
+    setLanguage(next)
+    // Reload only the web UI so Monaco's module-level labels use the new locale.
+    // The proxy engine and its connections keep running.
+    sessionStorage.setItem('clew-language-return', 'settings')
+    window.location.reload()
+  } catch {
+    languageError.value = t('Save failed')
+    languageSaving.value = false
+  }
+}
 
 const editorContainer = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
@@ -104,11 +130,11 @@ async function saveLogLevel() {
     const config = await getConfig() as Record<string, unknown>
     config.log_level = logLevel.value
     await updateConfig(config)
-    logLevelMessage.value = 'Saved'
+    logLevelMessage.value = t('Saved')
     setTimeout(() => { logLevelMessage.value = null }, 2000)
     await fetchConfig()
   } catch {
-    logLevelMessage.value = 'Save failed'
+    logLevelMessage.value = t('Save failed')
   }
 }
 
@@ -125,11 +151,11 @@ async function saveDns() {
     if (!dns.listen_port) dns.listen_port = 53
     config.dns = dns
     await updateConfig(config)
-    dnsSaveMessage.value = 'Saved'
+    dnsSaveMessage.value = t('Saved')
     setTimeout(() => { dnsSaveMessage.value = null }, 2000)
     await fetchConfig()  // refresh local state only; preserves unsaved Monaco edits
   } catch {
-    dnsSaveMessage.value = 'Save failed'
+    dnsSaveMessage.value = t('Save failed')
   }
 }
 
@@ -143,15 +169,15 @@ async function saveConfig() {
     await updateConfig(parsed)
     savedContent.value = content
     currentContent.value = content
-    saveMessage.value = { type: 'success', text: 'Config saved and reloaded' }
+    saveMessage.value = { type: 'success', text: t('Config saved and reloaded') }
     setTimeout(() => {
       saveMessage.value = null
     }, 3000)
   } catch (err) {
     let message: string
-    if (err instanceof SyntaxError) message = 'Invalid JSON syntax'
+    if (err instanceof SyntaxError) message = t('Invalid JSON syntax')
     else if (err instanceof Error) message = err.message
-    else message = 'Failed to save config'
+    else message = t('Failed to save config')
     saveMessage.value = { type: 'error', text: message }
   } finally {
     saving.value = false
@@ -181,7 +207,7 @@ async function applyAutostart(next: { enabled: boolean; start_minimized: boolean
   } catch (err) {
     autostartEnabled.value = prev.enabled
     autostartMinimized.value = prev.start_minimized
-    autostartMessage.value = err instanceof Error ? err.message : 'Failed to update autostart'
+    autostartMessage.value = err instanceof Error ? err.message : t('Failed to update autostart')
     setTimeout(() => { autostartMessage.value = null }, 4000)
   }
 }
@@ -253,7 +279,7 @@ async function openEditor() {
 
 function closeEditor() {
   if (hasUnsavedChanges.value) {
-    if (!confirm('You have unsaved changes. Discard?')) return
+    if (!confirm(t('You have unsaved changes. Discard?'))) return
   }
   editorOpen.value = false
   if (editor) {
@@ -284,18 +310,31 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col h-full overflow-auto thin-scrollbar">
-    <div class="p-6 flex flex-col gap-6 flex-1 min-h-0">
+    <div class="p-6 flex flex-col gap-6">
       <!-- General Section -->
+      <div class="max-w-xl rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 shrink-0">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <Label :for="languageId">{{ t('Language') }}</Label>
+            <p class="text-xs text-slate-500 mt-1">{{ t('Choose the display language. Changes apply immediately.') }}</p>
+          </div>
+          <select :id="languageId" :value="language" :disabled="languageSaving" @change="changeLanguage"
+            class="h-9 px-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#18181b] text-sm">
+            <option value="system">{{ t('Follow system') }}</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <p v-if="languageError" role="alert" class="text-xs text-red-500 mt-2">{{ languageError }}</p>
+      </div>
       <div class="max-w-xl">
-        <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">General</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Global configuration for Clew behavior.</p>
+        <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1"> {{ t('General') }} </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4"> {{ t('Global configuration for Clew behavior.') }} </p>
         <div class="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-200 dark:divide-slate-800">
           <div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#18181b]">
             <div>
-              <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Close to System Tray</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                When enabled, closing the window hides it to the system tray instead of exiting.
-              </p>
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('Close to System Tray') }} </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('When enabled, closing the window hides it to the system tray instead of exiting.') }} </p>
             </div>
             <button
               class="relative shrink-0 ml-4 inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-[#18181b]"
@@ -313,12 +352,8 @@ onUnmounted(() => {
           <div class="px-4 py-3 bg-white dark:bg-[#18181b]">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Start Clew at logon</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Clew runs as administrator (UAC). Implemented via Windows Task Scheduler
-                  (`ClewAutoStart`) to skip the UAC prompt at every login. Re-toggle if you
-                  move the clew.exe path.
-                </p>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('Start Clew at logon') }} </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('Clew runs as administrator (UAC). Implemented via Windows Task Scheduler (`ClewAutoStart`) to skip the UAC prompt at every login. Re-toggle if you move the clew.exe path.') }} </p>
               </div>
               <button
                 class="relative shrink-0 ml-4 inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-[#18181b]"
@@ -335,10 +370,8 @@ onUnmounted(() => {
             <div class="mt-3 pl-4 flex items-center justify-between"
                  :class="autostartEnabled ? '' : 'opacity-50'">
               <div>
-                <p class="text-xs font-medium text-slate-700 dark:text-slate-200">Start minimized to tray</p>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Clew launches without a visible window — only the tray icon. Only effective when "Start at logon" is on.
-                </p>
+                <p class="text-xs font-medium text-slate-700 dark:text-slate-200"> {{ t('Start minimized to tray') }} </p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('Clew launches without a visible window — only the tray icon. Only effective when "Start at logon" is on.') }} </p>
               </div>
               <button
                 :disabled="!autostartEnabled"
@@ -359,10 +392,8 @@ onUnmounted(() => {
           <div class="px-4 py-3 bg-white dark:bg-[#18181b]">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-200">DNS Proxy</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Route DNS queries through the proxy. Required when system DNS cannot resolve proxied services.
-                </p>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('DNS Proxy') }} </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('Route DNS queries through the proxy. Required when system DNS cannot resolve proxied services.') }} </p>
               </div>
               <button
                 class="relative shrink-0 ml-4 inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-[#18181b]"
@@ -378,24 +409,24 @@ onUnmounted(() => {
 
             <div v-if="dnsEnabled" class="mt-3 pl-0 space-y-3">
               <div class="flex items-center gap-3">
-                <Label :for="dnsModeId" class="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0">Mode</Label>
+                <Label :for="dnsModeId" class="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0"> {{ t('Mode') }} </Label>
                 <select
                   :id="dnsModeId"
                   v-model="dnsMode"
                   @change="saveDns"
                   class="h-8 px-2 text-sm border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-[#101922] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="forwarder">Forwarder (global, requires system DNS → 127.0.0.2)</option>
+                  <option value="forwarder"> {{ t('Forwarder (global, requires system DNS → 127.0.0.2)') }} </option>
                 </select>
               </div>
               <div class="flex items-center gap-3">
-                <Label :for="dnsUpstreamId" class="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0">Upstream</Label>
+                <Label :for="dnsUpstreamId" class="text-xs text-slate-500 dark:text-slate-400 w-20 shrink-0"> {{ t('Upstream') }} </Label>
                 <input
                   :id="dnsUpstreamId"
                   v-model="dnsUpstream"
                   @change="saveDns"
                   type="text"
-                  placeholder="DNS server"
+                  :placeholder="t('DNS server')"
                   class="h-8 px-2 text-sm font-mono border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-[#101922] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 w-40"
                 />
                 <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">:53</span>
@@ -408,24 +439,22 @@ onUnmounted(() => {
           <div class="px-4 py-3 bg-white dark:bg-[#18181b]">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Log Level</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Runtime log verbosity. Switching takes effect immediately, no restart needed.
-                  <code class="font-mono">debug</code> writes per-event diagnostics to <code class="font-mono">clew.log</code>.
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('Log Level') }} </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('Runtime log verbosity. Switching takes effect immediately, no restart needed.') }} <code class="font-mono"> {{ t('debug') }} </code> {{ t('writes per-event diagnostics to') }} <code class="font-mono">clew.log</code>.
                 </p>
               </div>
               <div class="flex items-center gap-2 ml-4 shrink-0">
-                <Label :for="logLevelId" class="sr-only">Log level</Label>
+                <Label :for="logLevelId" class="sr-only"> {{ t('Log level') }} </Label>
                 <select
                   :id="logLevelId"
                   v-model="logLevel"
                   @change="saveLogLevel"
                   class="h-8 px-2 text-sm border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-[#101922] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="debug">debug</option>
-                  <option value="info">info</option>
-                  <option value="warning">warning</option>
-                  <option value="error">error</option>
+                  <option value="debug"> {{ t('debug') }} </option>
+                  <option value="info"> {{ t('info') }} </option>
+                  <option value="warning"> {{ t('warning') }} </option>
+                  <option value="error"> {{ t('error') }} </option>
                 </select>
                 <span v-if="logLevelMessage" class="text-xs text-green-500">{{ logLevelMessage }}</span>
               </div>
@@ -442,26 +471,22 @@ onUnmounted(() => {
         <div v-if="!editorOpen" class="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#18181b]">
             <div>
-              <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Configuration File</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Edit raw JSON config for advanced tuning.</p>
+              <p class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('Configuration File') }} </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"> {{ t('Edit raw JSON config for advanced tuning.') }} </p>
             </div>
-            <Button size="sm" variant="outline" @click="openEditor">
-              Edit
-            </Button>
+            <Button size="sm" variant="outline" @click="openEditor"> {{ t('Edit') }} </Button>
           </div>
         </div>
 
         <template v-else>
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
-              <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">Configuration File</h2>
+              <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100"> {{ t('Configuration File') }} </h2>
               <Badge
                 v-if="hasUnsavedChanges"
                 variant="outline"
                 class="text-orange-400 border-orange-400/40"
-              >
-                Unsaved changes
-              </Badge>
+              > {{ t('Unsaved changes') }} </Badge>
               <span
                 v-if="saveMessage"
                 class="text-xs"
@@ -477,11 +502,9 @@ onUnmounted(() => {
                 @click="saveConfig"
               >
                 <Save class="size-4 mr-1" />
-                {{ saving ? 'Saving...' : 'Save & Reload' }}
+                {{ saving ? t('Saving...') : t('Save & Reload') }}
               </Button>
-              <Button size="sm" variant="outline" @click="closeEditor">
-                Close
-              </Button>
+              <Button size="sm" variant="outline" @click="closeEditor"> {{ t('Close') }} </Button>
             </div>
           </div>
 
@@ -495,16 +518,17 @@ onUnmounted(() => {
 
       <!-- About Section -->
       <div class="max-w-xl">
-        <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">About</h2>
+        <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1"> {{ t('About') }} </h2>
         <div class="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="px-4 py-3 bg-white dark:bg-[#18181b] space-y-1">
             <p class="text-xs text-slate-500 dark:text-slate-400">
               Clew <span class="font-mono text-slate-700 dark:text-slate-300">v{{ CLEW_VERSION }}</span>
             </p>
             <p class="text-xs text-slate-500 dark:text-slate-400">
-              Windows 进程级流量代理 ·
-              <a href="https://github.com/ymonster/clew-proxy" target="_blank"
-                 class="text-blue-600 dark:text-blue-400 hover:underline">github.com/ymonster/clew-proxy</a>
+              {{ t('Windows process-level traffic proxy') }} ·
+              <a href="https://github.com/LeoooChen/clew-proxy" target="_blank"
+                 class="text-blue-600 dark:text-blue-400 hover:underline">github.com/LeoooChen/clew-proxy</a>
+              · <a href="https://github.com/ymonster/clew-proxy" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">{{ t('Upstream project') }}</a>
             </p>
           </div>
         </div>

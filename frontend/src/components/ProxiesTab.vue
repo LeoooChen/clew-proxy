@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, computed, onMounted, useId } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -143,7 +144,7 @@ async function onSaveGroup() {
     editOpen.value = false
     await fetchData()
   } catch (e) {
-    pushError(e, 'Save proxy group failed')
+    pushError(e, t('Save proxy group failed'))
   } finally {
     saving.value = false
   }
@@ -164,7 +165,7 @@ async function onDelete(group: ProxyGroup) {
       await fetchData()
     }
   } catch (e) {
-    pushError(e, 'Delete proxy group failed')
+    pushError(e, t('Delete proxy group failed'))
   } finally {
     saving.value = false
   }
@@ -178,7 +179,7 @@ async function onMigrateAndDelete() {
     deleteOpen.value = false
     await fetchData()
   } catch (e) {
-    pushError(e, 'Migrate proxy group failed')
+    pushError(e, t('Migrate proxy group failed'))
   } finally {
     saving.value = false
   }
@@ -201,7 +202,7 @@ onMounted(fetchData)
           <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
           <input
             v-model="searchQuery"
-            placeholder="Search groups..."
+            :placeholder="t('Search groups...')"
             class="w-full pl-8 pr-7 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101922] text-slate-800 dark:text-white placeholder:text-slate-400 outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />
           <button
@@ -214,15 +215,14 @@ onMounted(fetchData)
         </div>
 
         <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 font-medium">
-          {{ groups.length }} group{{ groups.length !== 1 ? 's' : '' }}
+          {{ t('{count} groups', { count: groups.length }) }}
         </span>
 
         <button
           @click="openCreate"
           class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-sm shadow-blue-500/20 ml-2"
         >
-          <Plus class="w-3.5 h-3.5" /> New Group
-        </button>
+          <Plus class="w-3.5 h-3.5" /> {{ t('New Group') }} </button>
       </div>
     </div>
 
@@ -253,7 +253,7 @@ onMounted(fetchData)
               <Trash2 class="w-3.5 h-3.5" />
             </button>
             <span class="ml-auto text-xs text-slate-400 dark:text-slate-500 font-medium">
-              {{ rulesCountForGroup(group.id) }} rule{{ rulesCountForGroup(group.id) !== 1 ? 's' : '' }}
+              {{ t('{count} rules', { count: rulesCountForGroup(group.id) }) }}
             </span>
           </div>
 
@@ -282,14 +282,14 @@ onMounted(fetchData)
                 <template v-if="testResults.get(group.id)!.result!.latency_ms != null">
                   {{ testResults.get(group.id)!.result!.latency_ms }}ms
                 </template>
-                <template v-else>TIMEOUT</template>
+                <template v-else> {{ t('TIMEOUT') }} </template>
               </button>
             </template>
             <template v-else>
               <button
                 @click="onTest(group.id)"
                 class="p-1 rounded text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-                title="Test connectivity"
+                :title="t('Test connectivity')"
               >
                 <RefreshCw class="w-4 h-4" />
               </button>
@@ -303,7 +303,7 @@ onMounted(fetchData)
               class="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             >
               <ChevronDown class="w-3 h-3 transition-transform" :class="expandedGroupId === group.id ? 'rotate-180' : ''" />
-              {{ expandedGroupId === group.id ? 'Hide' : 'Show' }} rules
+              {{ expandedGroupId === group.id ? t('Hide rules') : t('Show rules') }}
             </button>
             <div v-if="expandedGroupId === group.id" class="mt-2 space-y-1 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
               <div
@@ -313,7 +313,7 @@ onMounted(fetchData)
               >
                 <span class="font-medium text-slate-700 dark:text-slate-300">{{ rule.name }}</span>
                 <span class="font-mono text-slate-400">{{ rule.process_name }}</span>
-                <Badge v-if="!rule.enabled" variant="outline" class="h-4 px-1 py-0 text-[9px]">off</Badge>
+                <Badge v-if="!rule.enabled" variant="outline" class="h-4 px-1 py-0 text-[9px]"> {{ t('off') }} </Badge>
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ onMounted(fetchData)
 
       <!-- Empty state -->
       <div v-if="filteredGroups.length === 0" class="py-16 flex flex-col items-center gap-3 text-slate-400">
-        <p class="text-sm">No proxy groups found.</p>
+        <p class="text-sm"> {{ t('No proxy groups found.') }} </p>
       </div>
     </div>
 
@@ -333,26 +333,26 @@ onMounted(fetchData)
         @escape-key-down="(e: Event) => e.preventDefault()"
       >
         <DialogHeader>
-          <DialogTitle>{{ editingGroup ? 'Edit Group' : 'New Proxy Group' }}</DialogTitle>
-          <DialogDescription>Configure a SOCKS5 proxy group.</DialogDescription>
+          <DialogTitle>{{ editingGroup ? t('Edit Group') : t('New Proxy Group') }}</DialogTitle>
+          <DialogDescription> {{ t('Configure a SOCKS5 proxy group.') }} </DialogDescription>
         </DialogHeader>
         <div class="space-y-4 py-2">
           <div class="space-y-1">
-            <Label :for="nameId" class="text-slate-700 dark:text-slate-200">Name</Label>
+            <Label :for="nameId" class="text-slate-700 dark:text-slate-200"> {{ t('Name') }} </Label>
             <Input :id="nameId" v-model="formName" placeholder="my-proxy" />
           </div>
           <div class="flex gap-2">
             <div class="flex-1 space-y-1">
-              <Label :for="hostId" class="text-slate-700 dark:text-slate-200">Host</Label>
+              <Label :for="hostId" class="text-slate-700 dark:text-slate-200"> {{ t('Host') }} </Label>
               <Input :id="hostId" v-model="formHost" placeholder="127.0.0.1" class="font-mono" />
             </div>
             <div class="w-24 space-y-1">
-              <Label :for="portId" class="text-slate-700 dark:text-slate-200">Port</Label>
+              <Label :for="portId" class="text-slate-700 dark:text-slate-200"> {{ t('Port') }} </Label>
               <Input :id="portId" v-model="formPort" placeholder="7890" class="font-mono" />
             </div>
           </div>
           <div class="space-y-1">
-            <Label :for="testUrlId" class="text-slate-700 dark:text-slate-200">Test URL</Label>
+            <Label :for="testUrlId" class="text-slate-700 dark:text-slate-200"> {{ t('Test URL') }} </Label>
             <Input :id="testUrlId" v-model="formTestUrl" placeholder="https://www.google.com" class="font-mono text-sm" />
           </div>
         </div>
@@ -360,11 +360,9 @@ onMounted(fetchData)
           <button
             @click="editOpen = false"
             class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
+          > {{ t('Cancel') }} </button>
           <Button :disabled="saving" @click="onSaveGroup" class="bg-blue-600 hover:bg-blue-700 text-white">
-            {{ saving ? 'Saving...' : (editingGroup ? 'Save' : 'Create') }}
+            {{ saving ? t('Saving...') : (editingGroup ? t('Save') : t('Create')) }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -377,15 +375,13 @@ onMounted(fetchData)
         @escape-key-down="(e: Event) => e.preventDefault()"
       >
         <DialogHeader>
-          <DialogTitle>Cannot Delete "{{ deletingGroup?.name }}"</DialogTitle>
-          <DialogDescription>
-            This proxy group is still in use. Migrate references to another group before deleting.
-          </DialogDescription>
+          <DialogTitle>{{ t('Cannot delete {name}', { name: deletingGroup?.name ?? '' }) }}</DialogTitle>
+          <DialogDescription> {{ t('This proxy group is still in use. Migrate references to another group before deleting.') }} </DialogDescription>
         </DialogHeader>
         <div v-if="deleteConflict" class="space-y-3 py-2">
           <!-- Referencing auto rules -->
           <div v-if="deleteConflict.auto_rules.length > 0">
-            <p class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Auto Rules ({{ deleteConflict.auto_rules.length }})</p>
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{{ t('Auto Rules ({count})', { count: deleteConflict.auto_rules.length }) }}</p>
             <div class="space-y-1 pl-3 border-l-2 border-slate-200 dark:border-slate-700">
               <div v-for="r in deleteConflict.auto_rules" :key="r.id" class="text-xs text-slate-500 dark:text-slate-400">
                 {{ r.name }}
@@ -395,15 +391,15 @@ onMounted(fetchData)
           <!-- Manual hijacks -->
           <div v-if="deleteConflict.manual_hijack_count > 0">
             <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
-              Manual Hijacks: {{ deleteConflict.manual_hijack_count }} process{{ deleteConflict.manual_hijack_count > 1 ? 'es' : '' }}
+              {{ t('Manual hijacks: {count} processes', { count: deleteConflict.manual_hijack_count }) }}
             </p>
           </div>
           <!-- Target group selector -->
           <div class="space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800">
-            <Label :for="migrateTargetLabelId" class="text-slate-700 dark:text-slate-200">Migrate to</Label>
+            <Label :for="migrateTargetLabelId" class="text-slate-700 dark:text-slate-200"> {{ t('Migrate to') }} </Label>
             <Select v-model="migrateTargetId">
               <SelectTrigger :id="migrateTargetLabelId">
-                <SelectValue placeholder="Select target group" />
+                <SelectValue :placeholder="t('Select target group')" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
@@ -421,11 +417,9 @@ onMounted(fetchData)
           <button
             @click="deleteOpen = false"
             class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
+          > {{ t('Cancel') }} </button>
           <Button :disabled="saving" @click="onMigrateAndDelete" class="bg-red-600 hover:bg-red-700 text-white">
-            {{ saving ? 'Processing...' : 'Migrate & Delete' }}
+            {{ saving ? t('Processing...') : t('Migrate & Delete') }}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,20 @@
+import { t } from '@/i18n'
 import type { AutoRule, ProcessInfo, Stats, TcpConnection, NetworkConnection, ProxyGroup, GroupInUseError, ProxyTestResult } from './types'
 
 const BASE = '/api'
+
+async function apiFetch(url: string, options?: RequestInit) {
+  try { return await fetch(url, options) }
+  catch { throw new Error(t('Request failed. Check the connection.')) }
+}
+
+function errorDetail(text: string): string {
+  try {
+    const body = JSON.parse(text)
+    if (typeof body.error === 'string') return t(body.error)
+  } catch { /* Non-JSON responses retain their diagnostic detail. */ }
+  return t(text)
+}
 
 const JSON_HEADERS: HeadersInit = { 'Content-Type': 'application/json' }
 
@@ -16,29 +30,29 @@ function mergeHeaders(init?: RequestInit): HeadersInit {
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await apiFetch(`${BASE}${url}`, {
     ...options,
     headers: mergeHeaders(options),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText)
-    throw new Error(`API error ${res.status}: ${text}`)
+    throw new Error(t('API error {status}: {detail}', { status: res.status, detail: errorDetail(text) }))
   }
   const text = await res.text()
   if (!text) {
-    throw new Error(`API error: expected JSON body for ${url}, got empty response`)
+    throw new Error(t('Empty API response: {url}', { url }))
   }
   return JSON.parse(text) as T
 }
 
 async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await apiFetch(`${BASE}${url}`, {
     ...options,
     headers: mergeHeaders(options),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText)
-    throw new Error(`API error ${res.status}: ${text}`)
+    throw new Error(t('API error {status}: {detail}', { status: res.status, detail: errorDetail(text) }))
   }
 }
 
@@ -169,7 +183,7 @@ export function updateProxyGroup(id: number, group: Partial<ProxyGroup>): Promis
 }
 
 export async function deleteProxyGroup(id: number): Promise<{ success: boolean } | GroupInUseError> {
-  const res = await fetch(`${BASE}/proxy-groups/${id}`, {
+  const res = await apiFetch(`${BASE}/proxy-groups/${id}`, {
     method: 'DELETE',
     headers: mergeHeaders(),
     body: '',
@@ -177,7 +191,7 @@ export async function deleteProxyGroup(id: number): Promise<{ success: boolean }
   const text = await res.text()
   const data = text ? JSON.parse(text) : { success: true }
   if (res.status === 409) return data as GroupInUseError
-  if (!res.ok) throw new Error(`API error ${res.status}: ${JSON.stringify(data)}`)
+  if (!res.ok) throw new Error(t('API error {status}: {detail}', { status: res.status, detail: errorDetail(text) }))
   return data
 }
 

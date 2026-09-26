@@ -14,6 +14,7 @@
 #include <WebView2EnvironmentOptions.h>
 #endif
 #include <atomic>
+#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -58,6 +59,7 @@ private:
     enum class wv_state { not_started, in_progress, ready, failed };
     wv_state wv_state_ = wv_state::not_started;
     bool close_to_tray_ = false;
+    bool chinese_ = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_CHINESE;
     bool devtools_enabled_ = true;
     bool start_minimized_ = false;  // launch directly into tray (autostart use case)
     NOTIFYICONDATAW nid_ = {};
@@ -143,6 +145,13 @@ private:
                                     return result;
                                 }
                                 webview_controller_ = controller;
+                                // Bounds remain physical client pixels. WebView2 tracks the
+                                // monitor DPI itself; a ZoomFactor would scale the page twice.
+                                Microsoft::WRL::ComPtr<ICoreWebView2Controller3> controller3;
+                                if (SUCCEEDED(controller->QueryInterface(IID_PPV_ARGS(&controller3)))) {
+                                    controller3->put_BoundsMode(COREWEBVIEW2_BOUNDS_MODE_USE_RAW_PIXELS);
+                                    controller3->put_ShouldDetectMonitorScaleChanges(TRUE);
+                                }
 
                                 // The controller is created with IsVisible=TRUE by default. If
                                 // we launched with --minimized the host window is already SW_HIDE
@@ -207,6 +216,10 @@ private:
                                                     ShowWindow(hwnd_, IsZoomed(hwnd_) ? SW_RESTORE : SW_MAXIMIZE);
                                                 } else if (cmd == L"close") {
                                                     SendMessage(hwnd_, WM_CLOSE, 0, 0);
+                                                } else if (cmd == L"language:zh-CN") {
+                                                    chinese_ = true;
+                                                } else if (cmd == L"language:en") {
+                                                    chinese_ = false;
                                                 }
                                                 return S_OK;
                                             }
@@ -275,6 +288,8 @@ private:
             wv_failure_notified_ = true;
             wchar_t msg[512];
             swprintf_s(msg,
+                       chinese_ ? L"Clew 窗口初始化失败（WebView2 错误 0x%08X）。\n\n"
+                       L"代理引擎仍在运行，可通过托盘菜单退出。\n\n详细信息请查看 clew.exe 旁的 clew.log。" :
                        L"Clew's window failed to initialize (WebView2 error 0x%08X).\n\n"
                        L"The proxy engine is still running — the tray icon works, and you "
                        L"can exit from there.\n\n"
@@ -380,9 +395,9 @@ private:
         POINT pt;
         GetCursorPos(&pt);
         HMENU menu = CreatePopupMenu();
-        AppendMenuW(menu, MF_STRING, IDM_TRAY_SHOW, L"Show");
+        AppendMenuW(menu, MF_STRING, IDM_TRAY_SHOW, chinese_ ? L"显示窗口" : L"Show");
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING, IDM_TRAY_EXIT, L"Exit");
+        AppendMenuW(menu, MF_STRING, IDM_TRAY_EXIT, chinese_ ? L"退出" : L"Exit");
         SetForegroundWindow(hwnd_);
         TrackPopupMenu(menu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd_, nullptr);
         DestroyMenu(menu);
@@ -500,10 +515,16 @@ private:
         return 0;
     }
 
-    static LRESULT on_getminmaxinfo(LPARAM lparam) {
+    static LRESULT on_getminmaxinfo(HWND hwnd, LPARAM lparam) {
         MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lparam);
-        mmi->ptMinTrackSize.x = 900;
-        mmi->ptMinTrackSize.y = 600;
+        const UINT dpi = GetDpiForWindow(hwnd);
+        mmi->ptMinTrackSize.x = MulDiv(900, dpi ? dpi : 96, 96);
+        mmi->ptMinTrackSize.y = MulDiv(600, dpi ? dpi : 96, 96);
+        MONITORINFO mi = { sizeof(mi) };
+        if (GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi)) {
+            mmi->ptMinTrackSize.x = std::min(mmi->ptMinTrackSize.x, mi.rcWork.right - mi.rcWork.left);
+            mmi->ptMinTrackSize.y = std::min(mmi->ptMinTrackSize.y, mi.rcWork.bottom - mi.rcWork.top);
+        }
         return 0;
     }
 
@@ -511,7 +532,9 @@ private:
         if (on_move_resize_) {
             RECT r;
             GetWindowRect(hwnd, &r);
-            on_move_resize_(r.left, r.top, r.right - r.left, r.bottom - r.top);
+            const UINT dpi = GetDpiForWindow(hwnd);
+            on_move_resize_(r.left, r.top, MulDiv(r.right - r.left, 96, dpi ? dpi : 96),
+                            MulDiv(r.bottom - r.top, 96, dpi ? dpi : 96));
         }
         return 0;
     }
@@ -587,6 +610,7 @@ private:
         }
         // Suppress background erase to prevent white flash.
         if (msg == WM_ERASEBKGND) return 1;
+        if (msg == WM_GETMINMAXINFO) return on_getminmaxinfo(hwnd, lparam);
 
         auto* app = reinterpret_cast<webview_app*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         if (!app) return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -616,7 +640,19 @@ private:
             case WM_SIZE:               return app->on_size(wparam);
             case WM_CLOSE:              return app->on_close(hwnd);
             case WM_DESTROY:            return app->on_destroy();
-            case WM_GETMINMAXINFO:      return on_getminmaxinfo(lparam);
+            case WM_DPICHANGED: {
+                const auto* rect = reinterpret_cast<const RECT*>(lparam);
+                SetWindowPos(hwnd, nullptr, rect->left, rect->top,
+                             rect->right - rect->left, rect->bottom - rect->top,
+                             SWP_NOZORDER | SWP_NOACTIVATE);
+                app->resize_webview();
+                return 0;
+            }
+            case WM_MOVE:
+#ifdef CLEW_HAS_WEBVIEW2
+                if (app->webview_controller_) app->webview_controller_->NotifyParentWindowPositionChanged();
+#endif
+                break;
             case WM_EXITSIZEMOVE:       return app->on_exitsizemove(hwnd);
             case WM_TRAYICON:           return app->on_trayicon(lparam);
             case WM_COMMAND:            return app->on_command(hwnd, wparam);
@@ -658,6 +694,10 @@ public:
     void set_on_move_resize(std::function<void(int, int, int, int)> callback) { on_move_resize_ = std::move(callback); }
     void set_initial_rect(int x, int y, int w, int h) { init_x_ = x; init_y_ = y; width_ = w; height_ = h; }
     void set_close_to_tray(bool v) { close_to_tray_ = v; }
+    void set_language(const std::string& language) {
+        chinese_ = language == "zh-CN" || (language != "en" &&
+            PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_CHINESE);
+    }
     void set_devtools_enabled(bool v) { devtools_enabled_ = v; }
     // Skip the initial SW_SHOW and start hidden (tray-only). Used by the
     // "start minimized" autostart sub-toggle. Must be set before run() or
@@ -719,7 +759,7 @@ public:
 
         int x;
         int y;
-        if (init_x_ >= 0 && init_y_ >= 0) {
+        if (init_x_ != -1 || init_y_ != -1) {
             x = init_x_;
             y = init_y_;
         } else {
@@ -740,6 +780,24 @@ public:
             PC_LOG_ERROR("Failed to create window: {}", GetLastError());
             return false;
         }
+
+        // Query the actual target window (not the primary display) before showing.
+        // Preserve logical size across restarts and clamp stale/off-screen geometry.
+        const UINT dpi = GetDpiForWindow(hwnd_);
+        int physical_width = MulDiv(std::max(width_, 900), dpi ? dpi : 96, 96);
+        int physical_height = MulDiv(std::max(height_, 600), dpi ? dpi : 96, 96);
+        MONITORINFO mi = { sizeof(mi) };
+        if (GetMonitorInfoW(MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST), &mi)) {
+            physical_width = std::min(physical_width, static_cast<int>(mi.rcWork.right - mi.rcWork.left));
+            physical_height = std::min(physical_height, static_cast<int>(mi.rcWork.bottom - mi.rcWork.top));
+            if (init_x_ == -1 && init_y_ == -1) {
+                x = mi.rcWork.left + (mi.rcWork.right - mi.rcWork.left - physical_width) / 2;
+                y = mi.rcWork.top + (mi.rcWork.bottom - mi.rcWork.top - physical_height) / 2;
+            }
+            x = std::clamp(x, static_cast<int>(mi.rcWork.left), static_cast<int>(mi.rcWork.right) - physical_width);
+            y = std::clamp(y, static_cast<int>(mi.rcWork.top), static_cast<int>(mi.rcWork.bottom) - physical_height);
+        }
+        SetWindowPos(hwnd_, nullptr, x, y, physical_width, physical_height, SWP_NOZORDER | SWP_NOACTIVATE);
 
         // Trigger WM_NCCALCSIZE to apply our frameless layout
         SetWindowPos(hwnd_, nullptr, 0, 0, 0, 0,

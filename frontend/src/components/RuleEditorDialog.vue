@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, watch, computed, useId } from 'vue'
 import {
   Dialog,
@@ -103,7 +104,7 @@ watch(() => props.open, async (open) => {
     } else {
       const pName = props.prefillProcessName || ''
       const pDir = props.prefillWorkDir || ''
-      formName.value = pName ? `Rule for ${pName}` : ''
+      formName.value = pName ? t('Rule for {name}', { name: pName }) : ''
       formProcessName.value = pName
       formCmdlinePattern.value = ''
       formHackTree.value = true
@@ -204,34 +205,32 @@ function onClose(value: boolean) {
 
 <template>
   <Dialog :open="open" @update:open="onClose">
-    <DialogContent class="sm:max-w-2xl bg-white dark:bg-[#181f26] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 p-0 overflow-hidden shadow-2xl rounded-xl"
+    <DialogContent class="sm:max-w-2xl bg-white dark:bg-[#181f26] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 p-0 overflow-hidden shadow-2xl rounded-xl flex flex-col gap-0 max-h-[calc(100dvh-2rem)]"
       @interact-outside="(e: Event) => e.preventDefault()"
       @escape-key-down="(e: Event) => e.preventDefault()"
     >
-      <DialogHeader class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1c242c]">
+      <DialogHeader class="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1c242c]">
         <DialogTitle class="flex items-center gap-3">
           <div class="bg-blue-600/10 p-2 rounded-lg text-blue-600 dark:text-blue-500">
             <SlidersHorizontal class="w-6 h-6" />
           </div>
           <div>
-            <h2 class="text-xl font-bold tracking-tight text-slate-800 dark:text-white">Auto Rule Editor</h2>
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Configure network interception rules</p>
+            <h2 class="text-xl font-bold tracking-tight text-slate-800 dark:text-white"> {{ t('Auto Rule Editor') }} </h2>
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400"> {{ t('Configure network interception rules') }} </p>
           </div>
         </DialogTitle>
       </DialogHeader>
 
-      <div class="p-6 space-y-8 max-h-[75vh] overflow-y-auto thin-scrollbar">
+      <div class="p-6 space-y-8 min-h-0 overflow-y-auto thin-scrollbar">
 
         <!-- Basic Info Section -->
         <div class="space-y-4">
           <div class="flex items-center gap-3">
-            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap">Basic Information</h3>
+            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap"> {{ t('Basic Information') }} </h3>
             <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
           </div>
           <div class="flex flex-col gap-2">
-            <Label :for="ruleNameId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              Rule Name
-              <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[200px]">Display name for this rule. Used for identification only.</p></TooltipContent></Tooltip>
+            <Label :for="ruleNameId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Rule Name') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[200px]"> {{ t('Display name for this rule. Used for identification only.') }} </p></TooltipContent></Tooltip>
             </Label>
             <Input :id="ruleNameId" v-model="formName" class="h-[42px] bg-slate-50 dark:bg-[#101922] border-slate-200 dark:border-slate-800 transition-all focus:ring-1 focus:ring-blue-500" />
           </div>
@@ -240,7 +239,7 @@ function onClose(value: boolean) {
         <!-- Process Matching Section -->
         <div class="space-y-4">
           <div class="flex items-center gap-3">
-            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap">Process Matching</h3>
+            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap"> {{ t('Process Matching') }} </h3>
             <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
           </div>
 
@@ -248,11 +247,9 @@ function onClose(value: boolean) {
             <!-- Process Name & Browse -->
             <div class="flex flex-col gap-2">
               <div class="flex justify-between items-center">
-                <Label :for="processNameId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  Process Name
-                  <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]">Executable name to match. Supports wildcards: * (any sequence), ? (single char). Case-insensitive.</p></TooltipContent></Tooltip>
+                <Label :for="processNameId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Process Name') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]"> {{ t('Executable name to match. Supports wildcards: * (any sequence), ? (single char). Case-insensitive.') }} </p></TooltipContent></Tooltip>
                 </Label>
-                <span class="text-xs text-slate-500 dark:text-slate-400">Supports wildcards (*)</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Supports wildcards (*)') }} </span>
               </div>
               <div class="flex gap-2">
                 <div class="relative flex-1">
@@ -260,8 +257,7 @@ function onClose(value: boolean) {
                   <Input :id="processNameId" v-model="formProcessName" class="h-[42px] pl-10 font-mono bg-slate-50 dark:bg-[#101922] border-slate-200 dark:border-slate-800 transition-all focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <Button variant="outline" @click="browseExe" class="h-[42px] flex items-center gap-1.5 bg-slate-50 dark:bg-[#1c242c] border-slate-200 dark:border-slate-800 hover:text-blue-600 dark:hover:border-blue-500">
-                  <FolderOpen class="w-4 h-4" /> Browse
-                </Button>
+                  <FolderOpen class="w-4 h-4" /> {{ t('Browse') }} </Button>
                 <input type="file" accept=".exe" class="hidden" ref="fileInput" @change="onExeSelected" />
               </div>
 
@@ -271,9 +267,9 @@ function onClose(value: boolean) {
                 :class="formUseWorkDir ? '' : 'opacity-40'"
               >
                 <Lock class="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <input readonly class="flex-1 bg-transparent text-xs font-mono text-slate-500 dark:text-slate-400 outline-none select-all" :value="formWorkDir" placeholder="Select an executable to auto-fill" />
+                <input readonly class="flex-1 bg-transparent text-xs font-mono text-slate-500 dark:text-slate-400 outline-none select-all" :value="formWorkDir" :placeholder="t('Select an executable to auto-fill')" />
                 <div class="flex items-center gap-2 flex-shrink-0 border-l border-slate-200 dark:border-slate-800 pl-3 ml-1">
-                  <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Use as filter</span>
+                  <span class="text-xs font-medium text-slate-500 dark:text-slate-400"> {{ t('Use as filter') }} </span>
                   <div
                     class="w-8 h-4 rounded-full p-[2px] cursor-pointer relative transition-colors"
                     :class="formUseWorkDir ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'"
@@ -288,11 +284,9 @@ function onClose(value: boolean) {
             <!-- Command Line Pattern -->
             <div class="flex flex-col gap-2">
               <div class="flex justify-between items-center">
-                <Label :for="cmdlinePatternId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  Command-line Pattern
-                  <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[250px]">Optional. Without wildcards: space-separated keywords, all must appear (order-independent). With * or ?: glob match against full cmdline.</p></TooltipContent></Tooltip>
+                <Label :for="cmdlinePatternId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Command-line Pattern') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[250px]"> {{ t('Optional. Without wildcards: space-separated keywords, all must appear (order-independent). With * or ?: glob match against full cmdline.') }} </p></TooltipContent></Tooltip>
                 </Label>
-                <span class="text-xs text-slate-500 dark:text-slate-400">Keywords or wildcards</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Keywords or wildcards') }} </span>
               </div>
               <div class="relative">
                 <Terminal class="absolute left-3 top-2.5 w-5 h-5 text-slate-400" />
@@ -317,25 +311,25 @@ function onClose(value: boolean) {
                 </div>
               </div>
               <div class="flex flex-col select-none">
-                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Capture Entire Process Tree</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">Always enabled in v0.9.0+. Per-rule single-process mode is not currently exposed.</span>
+                <span class="text-sm font-medium text-slate-700 dark:text-slate-200"> {{ t('Capture Entire Process Tree') }} </span>
+                <span class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Always enabled in v0.9.0+. Per-rule single-process mode is not currently exposed.') }} </span>
               </div>
             </div>
 
             <!-- Protocol -->
             <div class="flex flex-col gap-2">
-              <Label :for="protocolId" class="text-slate-700 dark:text-slate-200">Protocol</Label>
+              <Label :for="protocolId" class="text-slate-700 dark:text-slate-200"> {{ t('Protocol') }} </Label>
               <Select v-model="formProtocol">
                 <SelectTrigger :id="protocolId" class="w-full h-9 bg-white dark:bg-[#101922] border-slate-200 dark:border-slate-800">
-                  <SelectValue placeholder="Select protocol" />
+                  <SelectValue :placeholder="t('Select protocol')" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tcp">TCP Only</SelectItem>
-                  <SelectItem value="udp">UDP Only</SelectItem>
+                  <SelectItem value="tcp"> {{ t('TCP Only') }} </SelectItem>
+                  <SelectItem value="udp"> {{ t('UDP Only') }} </SelectItem>
                   <SelectItem value="both">TCP + UDP</SelectItem>
                 </SelectContent>
               </Select>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Which network protocol to intercept for this rule.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Which network protocol to intercept for this rule.') }} </p>
             </div>
           </div>
         </div>
@@ -343,13 +337,11 @@ function onClose(value: boolean) {
         <!-- Target Proxy Section -->
         <div class="space-y-4">
           <div class="flex items-center gap-3">
-            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap">Target Proxy</h3>
+            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider whitespace-nowrap"> {{ t('Target Proxy') }} </h3>
             <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
           </div>
           <div class="flex flex-col gap-2">
-            <Label :for="proxyGroupId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              Proxy Group
-              <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]">SOCKS5 proxy group to route matched traffic through. Configure groups in the Proxies tab.</p></TooltipContent></Tooltip>
+            <Label :for="proxyGroupId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Proxy Group') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]"> {{ t('SOCKS5 proxy group to route matched traffic through. Configure groups in the Proxies tab.') }} </p></TooltipContent></Tooltip>
             </Label>
 
             <!-- Group selector with styled badges -->
@@ -360,7 +352,7 @@ function onClose(value: boolean) {
               <SelectTrigger :id="proxyGroupId" class="h-[42px] bg-slate-50 dark:bg-[#101922] border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-blue-500">
                 <div class="flex items-center gap-2">
                   <template v-if="isCustomProxy">
-                    <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white tracking-tight">custom</span>
+                    <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white tracking-tight"> {{ t('custom') }} </span>
                     <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ customProxyHost || '—' }}</span>
                   </template>
                   <template v-else-if="selectedGroup">
@@ -371,7 +363,7 @@ function onClose(value: boolean) {
                       socks5://<span class="text-slate-700 dark:text-slate-300">{{ selectedGroup.host }}:{{ selectedGroup.port }}</span>
                     </span>
                   </template>
-                  <span v-else class="text-slate-400 dark:text-slate-500 text-sm">Select proxy group...</span>
+                  <span v-else class="text-slate-400 dark:text-slate-500 text-sm"> {{ t('Select proxy group...') }} </span>
                 </div>
               </SelectTrigger>
               <SelectContent class="bg-white dark:bg-[#181f26] border-slate-200 dark:border-slate-800">
@@ -387,8 +379,8 @@ function onClose(value: boolean) {
                 </SelectItem>
                 <SelectItem value="custom" class="py-2">
                   <div class="flex items-center gap-2">
-                    <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white tracking-tight">custom</span>
-                    <span class="text-xs text-slate-500 dark:text-slate-400">Enter address manually...</span>
+                    <span class="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white tracking-tight"> {{ t('custom') }} </span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Enter address manually...') }} </span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -409,36 +401,30 @@ function onClose(value: boolean) {
               class="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors group select-none"
               @click="advancedOpen = !advancedOpen"
             >
-              <ChevronRight class="w-4 h-4 transition-transform" :class="advancedOpen ? 'rotate-90' : ''" />
-              Advanced
-            </button>
+              <ChevronRight class="w-4 h-4 transition-transform" :class="advancedOpen ? 'rotate-90' : ''" /> {{ t('Advanced') }} </button>
             <div v-show="advancedOpen" class="mt-4 space-y-5 pl-3 border-l-2 border-slate-200 dark:border-slate-800">
               <!-- Exclude CIDRs -->
               <div class="flex flex-col gap-2">
-                <Label :for="excludeCidrsId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  Exclude CIDRs
-                  <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]">Traffic to these CIDR ranges will bypass the proxy (go direct). Default excludes are applied globally via config.</p></TooltipContent></Tooltip>
+                <Label :for="excludeCidrsId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Exclude CIDRs') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]"> {{ t('Traffic to these CIDR ranges will bypass the proxy (go direct). Default excludes are applied globally via config.') }} </p></TooltipContent></Tooltip>
                 </Label>
                 <TagInput
                   :id="excludeCidrsId"
                   :model-value="formExcludeCidrs"
                   @update:model-value="formExcludeCidrs = $event"
-                  placeholder="e.g. 192.168.0.0/16 (Enter to add)"
+                  :placeholder="t('e.g. 192.168.0.0/16 (Enter to add)')"
                 />
-                <p class="text-xs text-slate-500 dark:text-slate-400">Press Enter or comma to add. Click X to remove.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400"> {{ t('Press Enter or comma to add. Click X to remove.') }} </p>
               </div>
 
               <!-- Include Ports -->
               <div class="flex flex-col gap-2">
-                <Label :for="includePortsId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  Include Ports
-                  <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]">Only proxy traffic to these ports. Leave empty to proxy all ports.</p></TooltipContent></Tooltip>
+                <Label :for="includePortsId" class="text-slate-700 dark:text-slate-200 flex items-center gap-1.5"> {{ t('Include Ports') }} <Tooltip><TooltipTrigger as-child><HelpCircle class="w-3.5 h-3.5 text-slate-400 cursor-help" /></TooltipTrigger><TooltipContent side="right"><p class="text-xs max-w-[220px]"> {{ t('Only proxy traffic to these ports. Leave empty to proxy all ports.') }} </p></TooltipContent></Tooltip>
                 </Label>
                 <TagInput
                   :id="includePortsId"
                   :model-value="formIncludePorts"
                   @update:model-value="formIncludePorts = $event"
-                  placeholder="e.g. 443 (Enter to add)"
+                  :placeholder="t('e.g. 443 (Enter to add)')"
                 />
               </div>
             </div>
@@ -446,37 +432,31 @@ function onClose(value: boolean) {
         </div>
       </div>
 
-      <DialogFooter class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1c242c] flex flex-row items-center justify-between sm:justify-between w-full rounded-b-xl">
+      <DialogFooter class="shrink-0 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#1c242c] flex flex-row items-center justify-between sm:justify-between w-full rounded-b-xl">
         <div v-if="isEditing" class="flex items-center gap-2">
           <template v-if="!confirmingDelete">
             <button
               class="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1 opacity-80 hover:opacity-100"
               @click="onDelete"
             >
-              <Trash2 class="w-4 h-4" />
-              Delete Rule
-            </button>
+              <Trash2 class="w-4 h-4" /> {{ t('Delete Rule') }} </button>
           </template>
           <template v-else>
             <button
               class="text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md transition-colors"
               @click="onDeleteConfirmed"
-            >
-              Confirm Delete
-            </button>
+            > {{ t('Confirm Delete') }} </button>
             <button
               class="text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
               @click="confirmingDelete = false"
-            >
-              Cancel
-            </button>
+            > {{ t('Cancel') }} </button>
           </template>
         </div>
         <div v-else />
         <div class="flex gap-3">
-          <Button variant="outline" class="bg-transparent border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800" @click="onClose(false)">Cancel</Button>
+          <Button variant="outline" class="bg-transparent border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800" @click="onClose(false)"> {{ t('Cancel') }} </Button>
           <Button :disabled="!canSave || saving" class="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20" @click="onSave">
-            {{ saving ? 'Saving...' : 'Save Rule' }}
+            {{ saving ? t('Saving...') : t('Save Rule') }}
           </Button>
         </div>
       </DialogFooter>

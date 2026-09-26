@@ -278,6 +278,7 @@ std::unique_ptr<webview_app> app::create_gui() {
     gui->set_initial_rect(ui_cfg.window_x, ui_cfg.window_y,
                            ui_cfg.window_width, ui_cfg.window_height);
     gui->set_close_to_tray(ui_cfg.close_to_tray);
+    gui->set_language(ui_cfg.language);
     gui->set_devtools_enabled(opts_.devtools);
     gui->set_start_minimized(opts_.start_minimized);
     gui->set_on_move_resize([this](int x, int y, int w, int h) {

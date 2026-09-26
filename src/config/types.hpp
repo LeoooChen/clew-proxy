@@ -241,15 +241,17 @@ inline void from_json(const nlohmann::json& j, AutoRule& r) {
 // ============================================================
 
 struct UiConfig {
+    // Width/height are device-independent pixels (96 DPI); x/y are desktop pixels.
     int window_width = 1200;
     int window_height = 800;
     int window_x = -1;      // -1 = center
     int window_y = -1;
     bool dark_mode = true;
     bool close_to_tray = false;
+    std::string language = "system"; // system | en | zh-CN
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UiConfig, window_width, window_height, window_x, window_y, dark_mode, close_to_tray)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UiConfig, window_width, window_height, window_x, window_y, dark_mode, close_to_tray, language)
 
 // ============================================================
 // Config V2 - Top-level configuration
