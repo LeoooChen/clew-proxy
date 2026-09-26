@@ -47,15 +47,25 @@ test('language is persisted and survives reload in both directions', async ({ pa
   const config = await mockBackend(page)
   await page.goto('/')
   await settings(page)
-  await page.getByLabel('语言', { exact: true }).selectOption('en')
+  // Labels update before location.reload() commits. Wait for the app's reload
+  // before asserting or issuing another navigation, otherwise ERR_ABORTED races.
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByLabel('语言', { exact: true }).selectOption('en'),
+  ])
   await expect(page.getByLabel('Language', { exact: true })).toHaveValue('en')
   expect(config().ui.language).toBe('en')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await settings(page, 'Settings')
-  await page.getByLabel('Language', { exact: true }).selectOption('zh-CN')
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByLabel('Language', { exact: true }).selectOption('zh-CN'),
+  ])
   await expect(page.getByLabel('语言', { exact: true })).toHaveValue('zh-CN')
   expect(config().ui.language).toBe('zh-CN')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
 })
 
 test('failed language save keeps the current selection and reports failure', async ({ page }) => {
