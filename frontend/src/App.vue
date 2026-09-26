@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, computed, onMounted, onUnmounted, shallowRef, defineAsyncComponent, watch } from 'vue'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
@@ -58,7 +59,8 @@ const stats = ref<Stats>({
   auto_rules_count: 0,
 })
 
-const activeTab = ref('network')
+const activeTab = ref(sessionStorage.getItem('clew-language-return') ? 'settings' : 'network')
+sessionStorage.removeItem('clew-language-return')
 
 // === Rule Editor Dialog (global, shared by ProcessContextHeader + AutoRules) ===
 const autoRulesRef = ref<InstanceType<typeof AutoRules> | null>(null)
@@ -92,7 +94,7 @@ async function onRuleSave(payload: Omit<AutoRule, 'id' | 'matched_count' | 'excl
     ruleDialogOpen.value = false
     await refreshRules()
   } catch (e) {
-    pushError(e, 'Save rule failed')
+    pushError(e, t('Save rule failed'))
   } finally {
     ruleSaving.value = false
   }
@@ -105,7 +107,7 @@ async function onRuleDeleteFromDialog(id: string) {
     ruleDialogOpen.value = false
     await refreshRules()
   } catch (e) {
-    pushError(e, 'Delete rule failed')
+    pushError(e, t('Delete rule failed'))
   }
 }
 
@@ -257,7 +259,7 @@ onUnmounted(() => {
           <button
             @click="toggleTheme"
             class="h-full px-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Toggle theme"
+            :title="t('Toggle theme')"
           >
             <Sun v-if="!isDark" class="w-3.5 h-3.5" />
             <Moon v-else class="w-3.5 h-3.5" />
@@ -265,14 +267,14 @@ onUnmounted(() => {
           <button
             @click="windowCmd('minimize')"
             class="h-full px-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Minimize"
+            :title="t('Minimize')"
           >
             <Minus class="w-3.5 h-3.5" />
           </button>
           <button
             @click="windowCmd('maximize')"
             class="h-full px-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Maximize"
+            :title="isMaximized ? t('Restore') : t('Maximize')"
           >
             <Copy v-if="isMaximized" class="w-3 h-3" />
             <Square v-else class="w-3 h-3" />
@@ -280,7 +282,7 @@ onUnmounted(() => {
           <button
             @click="windowCmd('close')"
             class="h-full px-3 text-slate-500 dark:text-slate-400 hover:bg-red-500 hover:text-white transition-colors"
-            title="Close"
+            :title="t('Close')"
           >
             <X class="w-3.5 h-3.5" />
           </button>
@@ -320,7 +322,7 @@ onUnmounted(() => {
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'"
               >
                 <component :is="tab.icon" class="w-4 h-4" />
-                {{ tab.label }}
+                {{ t(tab.label) }}
                 <!-- Badge: active rules count on Rules tab -->
                 <span
                   v-if="tab.key === 'rules' && stats.auto_rules_count > 0"
@@ -355,7 +357,7 @@ onUnmounted(() => {
               <Suspense>
                 <ConfigEditor />
                 <template #fallback>
-                  <div class="flex-1 flex items-center justify-center text-sm text-slate-400">Loading editor...</div>
+                  <div class="flex-1 flex items-center justify-center text-sm text-slate-400"> {{ t('Loading editor...') }} </div>
                 </template>
               </Suspense>
             </TabsContent>
@@ -368,7 +370,7 @@ onUnmounted(() => {
       <footer class="h-8 bg-slate-50 dark:bg-[#18181b] border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0 transition-colors select-none">
         <div class="flex items-center gap-6">
           <div class="flex items-center gap-1.5">
-            <span>Listen Port:</span>
+            <span> {{ t('Listen Port:') }} </span>
             <span class="text-slate-700 dark:text-slate-300 font-mono tracking-tight">18080</span>
           </div>
         </div>
@@ -387,11 +389,11 @@ onUnmounted(() => {
         <div class="flex items-center gap-6">
           <div v-if="notify.connected.value" class="flex items-center gap-1.5">
             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            <span>Connected</span>
+            <span> {{ t('Connected') }} </span>
           </div>
           <div v-else class="flex items-center gap-1.5 text-red-400">
             <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
-            <span>Disconnected</span>
+            <span> {{ t('Disconnected') }} </span>
           </div>
         </div>
       </footer>

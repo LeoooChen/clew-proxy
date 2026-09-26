@@ -127,6 +127,7 @@ set(CLEW_SOURCES
 # Embed the Clew icon via a Win32 resource file.
 if(WIN32)
     list(APPEND CLEW_SOURCES ${CMAKE_SOURCE_DIR}/assets/clew.rc)
+    list(APPEND CLEW_SOURCES ${CMAKE_SOURCE_DIR}/assets/clew.manifest)
 endif()
 
 # Executable
@@ -205,6 +206,13 @@ endif()
 
 # Link libraries
 target_link_libraries(clew ${CLEW_LIBRARIES})
+
+include(CTest)
+if(BUILD_TESTING AND WIN32)
+    add_executable(clew_ui_tests tests/test_ui.cpp assets/clew.manifest)
+    target_link_libraries(clew_ui_tests PRIVATE quill::quill nlohmann_json::nlohmann_json)
+    add_test(NAME ui_config_and_dpi COMMAND clew_ui_tests)
+endif()
 
 # Copy WinDivert DLL to output directory
 add_custom_command(TARGET clew POST_BUILD

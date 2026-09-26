@@ -191,15 +191,15 @@ private:
         // Try SHGetFileInfoW first
         HICON hIcon = nullptr;
         SHFILEINFOW sfi = {};
-        if (SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_SMALLICON)) {
+        if (SHGetFileInfoW(wpath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
             hIcon = sfi.hIcon;
         }
 
         // Fallback: ExtractIconExW
         if (!hIcon) {
-            HICON hSmall = nullptr;
-            if (ExtractIconExW(wpath.c_str(), 0, nullptr, &hSmall, 1) > 0) {
-                hIcon = hSmall;
+            HICON hLarge = nullptr;
+            if (ExtractIconExW(wpath.c_str(), 0, &hLarge, nullptr, 1) > 0) {
+                hIcon = hLarge;
             }
         }
 
@@ -218,7 +218,8 @@ private:
         std::unique_ptr<Gdiplus::Bitmap> bmp(Gdiplus::Bitmap::FromHICON(hIcon));
         if (!bmp) return result;
 
-        constexpr int SIZE = 16;
+        // 16 CSS-pixel process icons need 32 source pixels at 200% scaling.
+        constexpr int SIZE = 32;
         Gdiplus::Bitmap resized(SIZE, SIZE, PixelFormat32bppARGB);
         {
             Gdiplus::Graphics g(&resized);

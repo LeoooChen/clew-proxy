@@ -11,6 +11,12 @@
 
 ---
 
+## Improvements in this fork
+
+- **Display language**: Settings → Language supports Simplified Chinese, English and the system language, persisted in the configuration.
+- **HiDPI**: PerMonitorV2 awareness, monitor-scale changes and higher-resolution process icons.
+- See the [fork development guide](docs/FORK_DEVELOPMENT.md) for the branch/PR workflow, builds and verification.
+
 ## Overview
 
 A process-level traffic proxy for Windows.

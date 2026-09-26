@@ -2,6 +2,8 @@
 // catch-all `"./*": "./*"` which Vite handles fine but TypeScript's module
 // resolver needs an explicit declaration for type checking.
 
+declare module 'monaco-editor/esm/nls.messages.zh-cn.js'
+
 declare module 'monaco-editor/esm/vs/editor/editor.api.js' {
   export * from 'monaco-editor'
 }

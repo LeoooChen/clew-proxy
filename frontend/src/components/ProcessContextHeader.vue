@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, computed } from 'vue'
 import type { ProcessInfo } from '@/api/types'
 import { revealFile } from '@/api/client'
@@ -119,16 +120,12 @@ async function locateExe() {
               v-if="node.hijack_source === 'manual'"
               variant="default"
               class="h-4 px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider bg-emerald-500 hover:bg-emerald-500 text-white border-transparent rounded-[3px]"
-            >
-              MANUAL
-            </Badge>
+            > {{ t('MANUAL') }} </Badge>
             <Badge
               v-else-if="node.hijack_source === 'auto'"
               variant="default"
               class="h-4 px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider bg-blue-600 dark:bg-blue-500 hover:bg-blue-600 text-white border-transparent rounded-[3px]"
-            >
-              AUTO
-            </Badge>
+            > {{ t('AUTO') }} </Badge>
           </div>
           <p class="text-xs font-mono text-slate-400 dark:text-slate-500">PID <span class="text-slate-600 dark:text-slate-300">{{ node.pid }}</span></p>
         </div>
@@ -137,7 +134,7 @@ async function locateExe() {
         <button
           @click="$emit('create-rule')"
           class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-          title="Create rule from this process"
+          :title="t('Create rule from this process')"
         >
           <Plus class="w-4 h-4" />
         </button>
@@ -153,7 +150,7 @@ async function locateExe() {
         :class="locateFlash
           ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
           : 'text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800'"
-        title="Reveal executable in Explorer"
+        :title="t('Reveal executable in Explorer')"
       >
         <FolderOpen class="w-3.5 h-3.5" />
       </button>
@@ -185,7 +182,7 @@ async function locateExe() {
         v-if="isCmdLong"
         @click="cmdExpanded = !cmdExpanded"
         class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors shrink-0"
-        :title="cmdExpanded ? 'Collapse' : 'Expand'"
+        :title="cmdExpanded ? t('Collapse') : t('Expand')"
       >
         <ChevronUp v-if="cmdExpanded" class="w-3.5 h-3.5" />
         <ChevronDown v-else class="w-3.5 h-3.5" />
@@ -196,7 +193,7 @@ async function locateExe() {
         v-if="cwd"
         @click="copy(cwd, 'cwd')"
         class="opacity-0 group-hover/path:opacity-100 transition-opacity p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
-        title="Copy working directory"
+        :title="t('Copy working directory')"
       >
         <Check v-if="copied === 'cwd'" class="w-3.5 h-3.5 text-emerald-500" />
         <Copy v-else class="w-3.5 h-3.5" />
@@ -205,10 +202,10 @@ async function locateExe() {
       <button
         @click="copy(cmdline, 'full')"
         class="opacity-0 group-hover/path:opacity-100 transition-opacity flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
-        title="Copy full command line"
+        :title="t('Copy full command line')"
       >
         <Check v-if="copied === 'full'" class="w-3 h-3 text-emerald-500" />
-        <template v-else><Copy class="w-3 h-3" /><span>all</span></template>
+        <template v-else><Copy class="w-3 h-3" /><span> {{ t('all') }} </span></template>
       </button>
     </div>
   </div>

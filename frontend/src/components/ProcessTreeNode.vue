@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import type { ProcessInfo } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -155,7 +156,7 @@ function onUnhack(e: Event) {
         <img
           v-if="!iconFailed"
           :src="iconUrl"
-          :alt="`${node.name} icon`"
+          :alt="node.name"
           class="w-4 h-4 mt-[1px] shrink-0 transition-opacity"
           :class="iconDim"
           loading="lazy"
@@ -188,7 +189,7 @@ function onUnhack(e: Event) {
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" :side-offset="4">
-                    <p class="text-xs">Hack</p>
+                    <p class="text-xs"> {{ t('Hack') }} </p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -203,7 +204,7 @@ function onUnhack(e: Event) {
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" :side-offset="4">
-                    <p class="text-xs">Unhack</p>
+                    <p class="text-xs"> {{ t('Unhack') }} </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -218,16 +219,12 @@ function onUnhack(e: Event) {
               v-if="manualHijack"
               variant="default"
               class="h-4 px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider bg-emerald-500 hover:bg-emerald-500 text-white border-transparent rounded-[3px]"
-            >
-              MANUAL
-            </Badge>
+            > {{ t('MANUAL') }} </Badge>
             <Badge
               v-else
               variant="default"
               class="h-4 px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider bg-blue-600 dark:bg-blue-500 hover:bg-blue-600 text-white border-transparent rounded-[3px]"
-            >
-              AUTO
-            </Badge>
+            > {{ t('AUTO') }} </Badge>
           </div>
         </div>
       </div>

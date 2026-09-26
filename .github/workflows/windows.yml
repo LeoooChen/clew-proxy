@@ -1,0 +1,50 @@
+name: Windows build and UI tests
+on:
+  pull_request:
+  push:
+    branches: [main, 'codex/**']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install native dependencies
+        shell: pwsh
+        run: |
+          git -C "$env:VCPKG_INSTALLATION_ROOT" fetch origin 617ef1c0c422737d117eda00a471ea1be5bad088
+          git -C "$env:VCPKG_INSTALLATION_ROOT" checkout 617ef1c0c422737d117eda00a471ea1be5bad088
+          & "$env:VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.bat" -disableMetrics
+          & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install quill nlohmann-json cpp-httplib asio --triplet x64-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./scripts/bootstrap-windows.ps1
+      - name: Build and test native UI
+        shell: pwsh
+        run: |
+          $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+          cmake --preset windows-vcpkg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir build -C Release --output-on-failure
+      - name: Build and test frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx playwright install chromium
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test -- --workers=2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results
+          path: frontend/test-results/

@@ -36,6 +36,8 @@ Thumbs.db
 # Node / frontend
 node_modules/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
 
 # Python
 __pycache__/

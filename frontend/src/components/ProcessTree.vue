@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { hijackProcess, unhijackProcess, getTcpConnections, getUdpConnections } from '@/api/client'
 import { useNotifications } from '@/api/notify'
@@ -258,13 +259,13 @@ function isAutoHijacked(node: ProcessInfo): boolean {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search PID or name..."
+          :placeholder="t('Search PID or name...')"
           class="w-full pl-9 pr-9 py-1.5 text-sm bg-white dark:bg-[#09090b] border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 text-slate-800 dark:text-slate-200"
         />
         <button
           v-if="searchQuery"
           type="button"
-          aria-label="Clear search"
+          :aria-label="t('Clear search')"
           class="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           @click="searchQuery = ''"
         >
@@ -284,7 +285,7 @@ function isAutoHijacked(node: ProcessInfo): boolean {
           :class="filterTab === f
             ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm'
             : 'text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
-        >{{ f }}</button>
+        >{{ t(f) }}</button>
       </div>
     </div>
 
@@ -297,9 +298,7 @@ function isAutoHijacked(node: ProcessInfo): boolean {
           ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'"
       >
-        <Monitor class="w-4 h-4" />
-        All Processes
-        <span class="ml-auto text-[10px] font-mono text-slate-400 dark:text-slate-500">
+        <Monitor class="w-4 h-4" /> {{ t('All Processes') }} <span class="ml-auto text-[10px] font-mono text-slate-400 dark:text-slate-500">
           {{ totalProcessCount }}
         </span>
       </button>
@@ -330,9 +329,7 @@ function isAutoHijacked(node: ProcessInfo): boolean {
             @unhack="unhackProcess"
           />
         </template>
-        <div v-else class="px-3 py-4 text-xs text-slate-400 dark:text-slate-500 text-center">
-          No processes found.
-        </div>
+        <div v-else class="px-3 py-4 text-xs text-slate-400 dark:text-slate-500 text-center"> {{ t('No processes found.') }} </div>
       </div>
     </div>
   </div>

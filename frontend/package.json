@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test"
   },
   "dependencies": {
+    "@ag-grid-community/locale": "35.1.0",
     "@tailwindcss/vite": "^4.1.18",
     "@vueuse/core": "^14.2.1",
     "ag-grid-community": "^35.1.0",
@@ -24,6 +26,7 @@
     "vue": "^3.5.25"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",
